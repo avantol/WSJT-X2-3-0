@@ -1,0 +1,79 @@
+// Status=edited
+
+Debian, Ubuntu, and other Debian-based systems including Raspbian:
+
+NOTE: The project team release binary installer packages targeted for
+one contemporary version of a Linux distribution. Although these may
+work on newer Linux versions or even different distributions, it is
+unlikely that they work on older versions. Check the notes provided
+with the release for details of the targeted Linux distributions and
+versions. If the binary package is not compatible with your Linux
+distribution or version, you must build the application from sources.
+
+* 32-bit: {debian32}
+- To install:
++
+[example]
+sudo dpkg -i wsjtx_{VERSION}_i386.deb
+
+- Uninstall:
++
+[example]
+sudo dpkg -P wsjtx
+
+* 64-bit: {debian64}
+- To install:
++
+[example]
+sudo dpkg -i wsjtx_{VERSION}_amd64.deb
+
+* 32-bit: {raspbian}
+- To install:
++
+[example]
+sudo dpkg -i wsjtx_{VERSION}_armhf.deb
+
+- Uninstall:
++
+[example]
+sudo dpkg -P wsjtx
+
+You may also need to execute the following command in a terminal:
+
+....
+sudo apt install libgfortran5 libqt5widgets5 libqt5network5 \
+     libqt5printsupport5 libqt5multimedia5-plugins libqt5serialport5 \
+     libqt5sql5-sqlite libfftw3-single3 libgomp1 libusb-1.0-0
+....
+
+Fedora, CentOS, Red Hat, and other rpm-based systems:
+
+* 32-bit: {fedora32}
+- To install:
++
+[example]
+sudo rpm -i wsjtx-{VERSION}-i686.rpm
+
+- Uninstall:
++
+[example]
+sudo rpm -e wsjtx
+
+* 64-bit: {fedora64}
+- To install:
++
+[example]
+sudo rpm -i wsjtx-{VERSION}-x86_64.rpm
+
+- Uninstall:
++
+[example]
+sudo rpm -e wsjtx
+
+You may also need to execute the following command in a terminal:
+
+....
+sudo dnf install libgfortran fftw-libs-single qt5-qtbase \
+     qt5-qtmultimedia qt5-qtserialport qt5-qtsvg \
+     qt5-qtserialport libgomp libusbx
+....
