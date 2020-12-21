@@ -7755,9 +7755,13 @@ void MainWindow::replyToCQ (QTime time, qint32 snr, float delta_time, quint32 de
     .arg (delta_frequency, 4)
     .arg (mode, -2)
     .arg (text);
+  
+  QTextCursor cursor;         //avt 12/21/20 set to null
+  if (m_externalCtrl)         //avt 12/21/20
+  {
   QTextCursor start {ui->decodedTextBrowser->document ()};
   start.movePosition (QTextCursor::End);
-  auto cursor = ui->decodedTextBrowser->document ()->find (message_line, start, QTextDocument::FindBackward);
+  cursor = ui->decodedTextBrowser->document ()->find (message_line, start, QTextDocument::FindBackward);    //avt 12/21/20
   if (cursor.isNull ())
     {
       // try again with with -0.0 delta time
@@ -7769,6 +7773,8 @@ void MainWindow::replyToCQ (QTime time, qint32 snr, float delta_time, quint32 de
                                                           .arg (mode, -2)
                                                           .arg (text), start, QTextDocument::FindBackward);
     }
+  }                         //avt 12/21/20
+
   if (!cursor.isNull () || m_externalCtrl) //avt 11/28/20
     {
       if (!m_externalCtrl) {      //avt 11/20/20 UDP listener doesn't need user attention
