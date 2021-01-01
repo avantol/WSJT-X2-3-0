@@ -68,6 +68,11 @@ public:
   Q_SLOT void decode (bool is_new, QTime time, qint32 snr, float delta_time, quint32 delta_frequency
                       , QString const& mode, QString const& message, bool low_confidence
                       , bool off_air);
+//avt 1/1/21
+  Q_SLOT void enqueue_decode (bool is_new, QTime time, qint32 snr, float delta_time, quint32 delta_frequency
+                      , QString const& mode, QString const& message, bool low_confidence
+                      , bool modifier);
+
   Q_SLOT void WSPR_decode (bool is_new, QTime time, qint32 snr, float delta_time, Frequency
                            , qint32 drift, QString const& callsign, QString const& grid, qint32 power
                            , bool off_air);

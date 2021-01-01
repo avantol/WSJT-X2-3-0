@@ -203,7 +203,7 @@
  *    applicable.
  *
  *
- * Decode        Out       2                      quint32
+ * Decode        Out       2                      quint32   (also EnqueueDecode, msg type 17, avt 1/1/21)
  *                         Id (unique key)        utf8
  *                         New                    bool
  *                         Time                   QTime
@@ -524,6 +524,7 @@ namespace NetworkMessage
       SwitchConfiguration,
       Configure,
       SetupTx,                 //avt 11/16/20
+      EnqueueDecode,            //avt 1/1/21
       maximum_message_type_     // ONLY add new message types
                                 // immediately before here
     };

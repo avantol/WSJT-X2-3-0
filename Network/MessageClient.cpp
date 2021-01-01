@@ -621,6 +621,22 @@ void MessageClient::decode (bool is_new, QTime time, qint32 snr, float delta_tim
     }
 }
 
+//avt 1/1/21
+void MessageClient::enqueue_decode (bool is_new, QTime time, qint32 snr, float delta_time, quint32 delta_frequency
+                            , QString const& mode, QString const& message_text, bool low_confidence
+                            , bool modifier)
+{
+   if (m_->server_port_ && !m_->server_.isNull ())
+    {
+      QByteArray message;
+      NetworkMessage::Builder out {&message, NetworkMessage::EnqueueDecode, m_->id_, m_->schema_};
+      out << is_new << time << snr << delta_time << delta_frequency << mode.toUtf8 ()
+          << message_text.toUtf8 () << low_confidence << modifier;
+      TRACE_UDP ("new" << is_new << "time:" << time << "snr:" << snr << "dt:" << delta_time << "df:" << delta_frequency << "mode:" << mode << "text:" << message_text << "low conf:" << low_confidence << "modifier:" << modifier);
+      m_->send_message (out, message);
+    }
+}
+
 void MessageClient::WSPR_decode (bool is_new, QTime time, qint32 snr, float delta_time, Frequency frequency
                                  , qint32 drift, QString const& callsign, QString const& grid, qint32 power
                                  , bool off_air)

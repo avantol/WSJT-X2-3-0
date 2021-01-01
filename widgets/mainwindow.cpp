@@ -578,9 +578,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
         if (newTxMsgIdx == 6) {   //set up some kind of CQ, set options
           //misc setup actions (*affects QSO state*)
-          if (ui->tx1->isEnabled() == skipGrid) on_txrb1_doubleClicked();   //set/clear skip grid msg
-          m_send_RR73 = !useRR73;         //set/clear use of RR73 msg
-          on_txrb4_doubleClicked();       //set/clear use of RR73 msg
+          ui->tx1->setEnabled(!skipGrid);   //avt 1/1/21 set/clear skip grid msg
+          m_send_RR73 = useRR73;            //avt 1/1/21 set/clear use of RR73 msg
           //*now* set QSO state
           if (!msg.isEmpty()) {   //set up directed CQ
             ui->tx6->setText(msg);
@@ -600,7 +599,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         //avt 11/29/20 log the QSO using current data, but don't change QSO state
         if (newTxMsgIdx == 5) {   
           m_qsoStop = QDateTime::currentDateTimeUtc ().toString ("hhmm");
-          //logQSOTimer.start(0);
           on_logQSOButton_clicked();    //priority?
           return;
         }
@@ -609,6 +607,16 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
           m_checkCmd = check;             //used as confirmation of cmd
           statusUpdate();                 //used as confirmation of UDP requests enabled
           return;
+        }
+
+        if (newTxMsgIdx == 255) {         //avt 1/1/21
+          // Log to N1MM Logger
+          if (m_config.broadcast_to_n1mm () && m_config.valid_n1mm_info ()) {
+            QUdpSocket sock;
+            if (-1 == sock.writeDatagram (msg.toUtf8(), QHostAddress {m_config.n1mm_server_name ()}, m_config.n1mm_server_port ())) {
+            MessageBox::warning_message (this, tr ("Error sending log to N1MM"), tr ("Write returned \"%1\"").arg (sock.errorString ()));
+            }
+          }
         }
       }
 
@@ -1049,6 +1057,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_isort=-3;
   m_max_dB=70;
   m_CQtype="CQ";
+  m_dblClk = false; //avt 1/1/21
+  m_checkCmd = "";  //avt 1/1/21
   fixStop();
   VHF_features_enabled(m_config.enable_VHF_features());
   m_wideGraph->setVHF(m_config.enable_VHF_features());
@@ -4732,6 +4742,14 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
     return;
   }
   DecodedText message {cursor.block().text().trimmed().left(61).remove("TU; ")};
+ 
+   if (!(modifiers & Qt::ShiftModifier) && (modifiers & Qt::AltModifier)) {    //avt 1/1/21 detect alt/dbl-click and ctrl/alt/dbl-click (but not shift/dbl-click)
+    enqueueDecode((modifiers & Qt::ControlModifier), DecodedText {message});  //avt 1/1/21
+    return;                   //avt 1/1/21
+  }                           //avt 1/1/21
+  m_dblClk = true;            //avt 1/1/21 must only be set if not alt-key related
+  statusUpdate();             //avt 1/1/21 make sure UDP listener notified of this event 
+
   m_bDoubleClicked = true;
   processMessage (message, modifiers);
 }
@@ -4741,8 +4759,9 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   // decode keyboard modifiers we are interested in
   auto shift = modifiers.testFlag (Qt::ShiftModifier);
   auto ctrl = modifiers.testFlag (Qt::ControlModifier);
-  // auto alt = modifiers.testFlag (Qt::AltModifier);
-  // basic mode sanity checks
+  auto alt = modifiers.testFlag (Qt::AltModifier);      //avt 1/1/21
+  if (alt) return;                                      //avt 1/1/21
+ // basic mode sanity checks
   auto const& parts = message.string ().split (' ', SkipEmptyParts);
   if (parts.size () < 5) return;
   auto const& mode = parts.at (4).left (1);
@@ -5814,6 +5833,8 @@ void MainWindow::on_dxGridEntry_textChanged (QString const& grid)
 void MainWindow::on_genStdMsgsPushButton_clicked()         //genStdMsgs button
 {
   genStdMsgs(m_rpt);
+  m_dblClk = true;      //avt 1/1/21
+  statusUpdate();       //avt 1/1/21
 }
 
 void MainWindow::on_logQSOButton_clicked()                 //Log QSO button
@@ -7735,7 +7756,7 @@ void MainWindow::on_cbTx6_toggled(bool)
 // Takes a decoded CQ line and sets it up for reply
 void MainWindow::replyToCQ (QTime time, qint32 snr, float delta_time, quint32 delta_frequency
                             , QString const& mode, QString const& message_text
-                            , bool /*low_confidence*/, quint8 modifiers)
+                            , bool useReply, quint8 modifiers)        //avt 1/1/21
 {
   QString format_string {"%1 %2 %3 %4 %5 %6"};
   auto const& time_string = time.toString ("~" == mode || "&" == mode
@@ -7797,6 +7818,7 @@ void MainWindow::replyToCQ (QTime time, qint32 snr, float delta_time, quint32 de
       //}
 
       m_bDoubleClicked = true;  //avt 11/15/20 UDP listener simulating dbl-click
+      if (m_externalCtrl && useReply) ui->tx1->setEnabled(true);    //avt 1/1/21 disable skip grid msg, use reply msg instead
      
       DecodedText message {message_line};
       Qt::KeyboardModifiers kbmod {modifiers << 24};
@@ -7887,6 +7909,25 @@ void MainWindow::postDecode (bool is_new, DecodedText decoded_text)      //avt 1
                                , decode.mid (has_seconds ? 24 : 22)
                                , QChar {'?'} == decode.mid (has_seconds ? 24 + 21 : 22 + 21, 1)
                                , m_diskData);
+    }
+}
+
+void MainWindow::enqueueDecode (bool modifier, DecodedText decoded_text)      //avt 1/1/21
+{
+  bool spare = true;
+  QString message = decoded_text.string();      //avt 1/1/21
+  auto const& decode = message.trimmed ();
+  auto const& parts = decode.left (22).split (' ', SkipEmptyParts);
+  if (parts.size () >= 5 && (!m_externalCtrl || decoded_text.isStandardMessage()))   //avt 1/1/21
+    {
+      auto has_seconds = parts[0].size () > 4;
+      m_messageClient->enqueue_decode (spare
+                               , QTime::fromString (parts[0], has_seconds ? "hhmmss" : "hhmm")
+                               , parts[1].toInt ()
+                               , parts[2].toFloat (), parts[3].toUInt (), parts[4]
+                               , decode.mid (has_seconds ? 24 : 22)
+                               , QChar {'?'} == decode.mid (has_seconds ? 24 + 21 : 22 + 21, 1)
+                               , modifier);
     }
 }
 
@@ -8395,7 +8436,7 @@ void MainWindow::on_cbCQTx_toggled(bool b)
   setXIT (ui->TxFreqSpinBox->value ());
 }
 
-void MainWindow::statusUpdate () const
+void MainWindow::statusUpdate () //const  //avt 1/1/21
 {
   if (!ui || m_block_udp_status_updates) return;
   auto submode = current_submode ();
@@ -8430,8 +8471,9 @@ void MainWindow::statusUpdate () const
                                   static_cast<quint8> (m_config.special_op_id ()),
                                   ftol, tr_period, m_multi_settings->configuration_name (), 
                                   m_currentMessage.trimmed(), m_QSOProgress, ui->txFirstCheckBox->isChecked(),     //avt 11/16/20 UDP listener needs extra info
-                                  ui->cbCQonly->isVisible() and ui->cbCQonly->isChecked(),
+                                  m_dblClk,     //avt 1/1/21
                                   m_checkCmd);  //avt 12/15/20
+m_dblClk = false;     //avt 1/1/21 one-shot event notification
 }
 
 void MainWindow::childEvent (QChildEvent * e)
@@ -8521,7 +8563,6 @@ void MainWindow::on_cbCQonly_toggled(bool)
 {  //Fix this -- no decode here?
   to_jt9(m_ihsym,1,-1);                //Send m_ihsym to jt9[.exe] and start decoding
   decodeBusy(true);
-  statusUpdate();       //avt 12/4/20 so that UDP listener is notified
 }
 
 void MainWindow::on_cbFirst_toggled(bool b)
