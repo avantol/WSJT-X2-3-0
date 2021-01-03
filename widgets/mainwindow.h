@@ -726,7 +726,7 @@ private:
   void locationChange(QString const& location);
   void replayDecodes ();
   void postDecode (bool is_new, DecodedText decoded_text);  //avt 12/5/20
-  void enqueueDecode (bool modifier, DecodedText decoded_text);   //avt 1/1/21
+  void enqueueDecode (DecodedText decoded_text, bool modifier, bool autoGen, bool isDx);   //avt 1/3/21
   void postWSPRDecode (bool is_new, QStringList message_parts);
   void enable_DXCC_entity (bool on);
   void switch_mode (Mode);
