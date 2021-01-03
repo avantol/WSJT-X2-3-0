@@ -1079,10 +1079,10 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   splashTimer.setSingleShot (true);
   splashTimer.start (20 * 1000);
 
-  if(QCoreApplication::applicationVersion().contains("-devel") or
-     QCoreApplication::applicationVersion().contains("-rc")) {
+  //if(QCoreApplication::applicationVersion().contains("-devel") or
+  //   QCoreApplication::applicationVersion().contains("-rc")) {
      QTimer::singleShot (0, this, SLOT (not_GA_warning_message ()));
-  }
+  //}
 
   ui->pbBestSP->setVisible(m_mode=="FT4");
   if(!ui->cbMenus->isChecked()) {
