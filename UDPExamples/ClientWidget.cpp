@@ -5,7 +5,6 @@
 #include <QColor>
 #include <QtWidgets>
 #include <QAction>
-#include <QDebug>
 
 #include "validators/MaidenheadLocatorValidator.hpp"
 
