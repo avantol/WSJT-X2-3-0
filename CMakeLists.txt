@@ -49,6 +49,7 @@ project (wsjtx
   LANGUAGES C CXX Fortran
   )
 set (PROJECT_DESCRIPTION "WSJT-X: Digital Modes for Weak Signal Communications in Amateur Radio")
+set (CMAKE_PROJECT_DESCRIPTION ${PROJECT_DESCRIPTION})
 
 #
 # Local CMake modules and support files
@@ -70,7 +71,7 @@ message (STATUS "******************************************************")
 
 include (set_build_type)
 # RC 0 or omitted is a development build, GA is a General Availability release build
-set_build_type (RC 3)
+set_build_type (GA)
 set (wsjtx_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}${BUILD_TYPE_REVISION}")
 
 #
@@ -1579,6 +1580,7 @@ install (FILES
 
 install (FILES
   cty.dat
+  cty.dat_copyright.txt
   contrib/Ephemeris/JPLEPH
   DESTINATION ${CMAKE_INSTALL_DATADIR}/${CMAKE_PROJECT_NAME}
   #COMPONENT runtime
@@ -1660,7 +1662,7 @@ endif (NOT WIN32 AND NOT APPLE)
 
 
 #
-# bundle fixup only done in Release or MinSizeRel configurations
+# bundle fixup only done in non-Debug configurations
 #
 if (NOT is_debug_build)
 
@@ -1707,7 +1709,7 @@ if (NOT is_debug_build)
 	${QT_PLUGINS_DIR}/imageformats
 	${QT_PLUGINS_DIR}/styles
 	DESTINATION ${WSJT_PLUGIN_DESTINATION}
-	CONFIGURATIONS Release MinSizeRel
+	CONFIGURATIONS Release MinSizeRel RelWithDebInfo
 	#COMPONENT runtime
 	FILES_MATCHING PATTERN "*${CMAKE_SHARED_LIBRARY_SUFFIX}"
 	PATTERN "*minimal*${CMAKE_SHARED_LIBRARY_SUFFIX}" EXCLUDE
@@ -1721,7 +1723,7 @@ if (NOT is_debug_build)
 	FILES
 	${QT_PLUGINS_DIR}/sqldrivers/libqsqlite${CMAKE_SHARED_LIBRARY_SUFFIX}
 	DESTINATION ${WSJT_PLUGIN_DESTINATION}/sqldrivers
-	CONFIGURATIONS Release MinSizeRel
+	CONFIGURATIONS Release MinSizeRel RelWithDebInfo
 	#COMPONENT runtime
 	)
       # install (
@@ -1765,7 +1767,7 @@ if (NOT is_debug_build)
 	${QT_PLUGINS_DIR}/audio
 	${QT_PLUGINS_DIR}/imageformats
 	DESTINATION ${WSJT_PLUGIN_DESTINATION}
-	CONFIGURATIONS Release MinSizeRel
+	CONFIGURATIONS Release MinSizeRel RelWithDebInfo
 	#COMPONENT runtime
 	FILES_MATCHING PATTERN "*${CMAKE_SHARED_LIBRARY_SUFFIX}"
 	PATTERN "*minimal*${CMAKE_SHARED_LIBRARY_SUFFIX}" EXCLUDE
@@ -1777,7 +1779,7 @@ if (NOT is_debug_build)
 	FILES
 	${QT_PLUGINS_DIR}/sqldrivers/qsqlite${CMAKE_SHARED_LIBRARY_SUFFIX}
 	DESTINATION ${WSJT_PLUGIN_DESTINATION}/sqldrivers
-	CONFIGURATIONS Release MinSizeRel
+	CONFIGURATIONS Release MinSizeRel RelWithDebInfo
 	#COMPONENT runtime
 	)
       # install (

@@ -7330,7 +7330,13 @@ void MainWindow::rigFailure (QString const& reason)
   else
     {
       if (m_splash && m_splash->isVisible ()) m_splash->hide ();
-      m_rigErrorMessageBox.setDetailedText (reason);
+      m_rigErrorMessageBox.setDetailedText (reason + "\n\nTimestamp: "
+#if QT_VERSION >= QT_VERSION_CHECK (5, 8, 0)
+                                            + QDateTime::currentDateTimeUtc ().toString (Qt::ISODateWithMs)
+#else
+                                            + QDateTime::currentDateTimeUtc ().toString ("yyyy-MM-ddTHH:mm:ss.zzzZ")
+#endif
+                                            );
 
       // don't call slot functions directly to avoid recursion
       m_rigErrorMessageBox.exec ();
