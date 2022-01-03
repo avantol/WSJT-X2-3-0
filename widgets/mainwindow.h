@@ -325,6 +325,8 @@ private slots:
   void remote_configure (QString const& mode, quint32 frequency_tolerance, QString const& submode
                          , bool fast_mode, quint32 tr_period, quint32 rx_df, QString const& dx_call
                          , QString const& dx_grid, bool generate_messages);
+  void showExternalCtrlDisconnect();     //avt 12/16/21
+
 
 private:
   Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
@@ -541,6 +543,9 @@ private:
   bool    m_externalCtrl=false;   //avt 12/5/20
   QString m_checkCmd;             //avt 12/15/20
   bool    m_dblClk;               //avt 1/1/21
+  QString m_dxCall;               //avt 11/12/21
+  bool    m_bOffset;              //avt 11/13/21
+  bool    m_txHaltClk;            //avt 12/18/21
 
   enum
     {
@@ -603,6 +608,7 @@ private:
   QTimer minuteTimer;
   QTimer splashTimer;
   QTimer p1Timer;
+  QTimer externalCtrlTimer;     //avt 12/16/21
 
   QString m_path;
   QString m_baseCall;
@@ -785,6 +791,8 @@ private:
   void to_jt9(qint32 n, qint32 istart, qint32 idone);
   bool is_externalCtrlMode();     //avt 12/5/20
   void initExternalCtrl();     //avt 12/5/20
+  void externalCtrlDisconnected();  //avt 12/16/21
+  void end_tuning();		//avt 12/16/21
 };
 
 extern int killbyname(const char* progName);

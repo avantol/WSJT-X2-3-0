@@ -71,12 +71,12 @@ public:
   void heartbeat ();
   void closedown ();
   StreamStatus check_status (QDataStream const&) const;
-  void send_message (QByteArray const&, bool queue_if_pending = true);
-  void send_message (QDataStream const& out, QByteArray const& message, bool queue_if_pending = true)
+  void send_message (QByteArray const&, bool queue_if_pending = true, bool allow_duplicates = false);		//avt 12/31/21
+  void send_message (QDataStream const& out, QByteArray const& message, bool queue_if_pending = true, bool allow_duplicates = false)		//avt 12/31/21
   {
     if (OK == check_status (out))
       {
-        send_message (message, queue_if_pending);
+        send_message (message, queue_if_pending, allow_duplicates);		//avt 12/31/21
       }
     else
       {
@@ -197,7 +197,7 @@ void MessageClient::impl::start ()
   // clear any backlog
   while (pending_messages_.size ())
     {
-      send_message (pending_messages_.dequeue (), false);
+      send_message (pending_messages_.dequeue (), true, false);		//avt 12/31/21
     }
 }
 
@@ -322,11 +322,12 @@ void MessageClient::impl::parse_message (QByteArray const& msg)
                 bool skipGrid;
                 bool useRR73;
                 QByteArray check;
-                in >> newTxMsgIdx >> msg >> skipGrid >> useRR73 >> check;
-                TRACE_UDP ("Setup Tx newTxMsgIdx:" << newTxMsgIdx << "msg:" << msg << "skipGrid:" << skipGrid << "useRR73:" << useRR73< "check:" << check);
+                quint32 offset;             //avt 11/12/21
+                in >> newTxMsgIdx >> msg >> skipGrid >> useRR73 >> check >> offset;
+                TRACE_UDP ("Setup Tx newTxMsgIdx:" << newTxMsgIdx << "msg:" << msg << "skipGrid:" << skipGrid << "useRR73:" << useRR73 << "check:" << check << "offset" << offset); //avt 11/14/21
                 if (check_status (in) != Fail)
                   {
-                    Q_EMIT self_->setup_tx (newTxMsgIdx, QString::fromUtf8(msg), skipGrid, useRR73, QString::fromUtf8(check));
+                    Q_EMIT self_->setup_tx (newTxMsgIdx, QString::fromUtf8(msg), skipGrid, useRR73, QString::fromUtf8(check), offset);
                   }
               }
               break;
@@ -445,7 +446,7 @@ void MessageClient::impl::heartbeat ()
       out << NetworkMessage::Builder::schema_number // maximum schema number accepted
           << version_.toUtf8 () << revision_.toUtf8 ();
       TRACE_UDP ("schema:" << schema_ << "max schema:" << NetworkMessage::Builder::schema_number << "version:" << version_ << "revision:" << revision_);
-      send_message (out, message, false);
+      send_message (out, message, false, true);		//avt 12/31/21
     }
 }
 
@@ -460,13 +461,13 @@ void MessageClient::impl::closedown ()
     }
 }
 
-void MessageClient::impl::send_message (QByteArray const& message, bool queue_if_pending)
+void MessageClient::impl::send_message (QByteArray const& message, bool queue_if_pending, bool allow_duplicates)		//avt 12/31/21
 {
   if (server_port_)
     {
       if (!server_.isNull ())
         {
-          if (message != last_message_) // avoid duplicates
+          if (allow_duplicates || message != last_message_) // avoid duplicates		//avt 12/31/21
             {
               if (is_multicast_address (server_))
                 {
@@ -590,7 +591,8 @@ void MessageClient::status_update (Frequency f, QString const& mode, QString con
                                    , quint32 qsoProgress        //avt 11/16/20
                                    , bool txFirst               //avt 11/16/20
                                    , bool cQonly                //avt 12/4/20
-                                   , QString const& genMsg)     //avt 12/4/20
+                                   , QString const& genMsg      //avt 12/4/20
+                                   , bool txHaltClk)            //avt 12/18/21
 {
   if (m_->server_port_ && !m_->server_.isNull ())
     {
@@ -600,8 +602,8 @@ void MessageClient::status_update (Frequency f, QString const& mode, QString con
           << tx_enabled << transmitting << decoding << rx_df << tx_df << de_call.toUtf8 ()
           << de_grid.toUtf8 () << dx_grid.toUtf8 () << watchdog_timeout << sub_mode.toUtf8 ()
           << fast_mode << special_op_mode << frequency_tolerance << tr_period << configuration_name.toUtf8 () 
-          << lastTxMsg.toUtf8 () << qsoProgress << txFirst << cQonly  << genMsg.toUtf8 ();    //avt 12/14/20
-      TRACE_UDP ("frequency:" << f << "mode:" << mode << "DX:" << dx_call << "report:" << report << "Tx mode:" << tx_mode << "tx_enabled:" << tx_enabled << "Tx:" << transmitting << "decoding:" << decoding << "Rx df:" << rx_df << "Tx df:" << tx_df << "DE:" << de_call << "DE grid:" << de_grid << "DX grid:" << dx_grid << "w/d t/o:" << watchdog_timeout << "sub_mode:" << sub_mode << "fast mode:" << fast_mode << "spec op mode:" << special_op_mode << "frequency tolerance:" << frequency_tolerance << "T/R period:" << tr_period << "configuration name:" << configuration_name "lastTxMsg:" << lastTxMsg << "qsoProgress:" << qsoProgress << "txFirst:" << txFirst << "cQonly:" << cQonly << "genMsg:" << genMsg); //avt 12/14/20
+          << lastTxMsg.toUtf8 () << qsoProgress << txFirst << cQonly  << genMsg.toUtf8 () << txHaltClk;    //avt 12/18/21
+      TRACE_UDP ("frequency:" << f << "mode:" << mode << "DX:" << dx_call << "report:" << report << "Tx mode:" << tx_mode << "tx_enabled:" << tx_enabled << "Tx:" << transmitting << "decoding:" << decoding << "Rx df:" << rx_df << "Tx df:" << tx_df << "DE:" << de_call << "DE grid:" << de_grid << "DX grid:" << dx_grid << "w/d t/o:" << watchdog_timeout << "sub_mode:" << sub_mode << "fast mode:" << fast_mode << "spec op mode:" << special_op_mode << "frequency tolerance:" << frequency_tolerance << "T/R period:" << tr_period << "configuration name:" << configuration_name "lastTxMsg:" << lastTxMsg << "qsoProgress:" << qsoProgress << "txFirst:" << txFirst << "cQonly:" << cQonly << "genMsg:" << genMsg << "txHaltClk:" << txHaltClk); //avt 12/14/20
       m_->send_message (out, message);
     }
 }

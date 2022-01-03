@@ -64,7 +64,7 @@ public:
                              , QString const& dx_grid, bool watchdog_timeout, QString const& sub_mode
                              , bool fast_mode, quint8 special_op_mode, quint32 frequency_tolerance
                              , quint32 tr_period, QString const& configuration_name
-                             , QString const& lastTxMsg, quint32 qsoProgress, bool txFirst, bool cQOnly, QString const& genMsg);    //avt 12/14/20
+                             , QString const& lastTxMsg, quint32 qsoProgress, bool txFirst, bool cQOnly, QString const& genMsg, bool txHaltClk);    //avt 12/18/21
   Q_SLOT void decode (bool is_new, QTime time, qint32 snr, float delta_time, quint32 delta_frequency
                       , QString const& mode, QString const& message, bool low_confidence
                       , bool off_air);
@@ -138,7 +138,7 @@ public:
   Q_SIGNAL void location (QString const&);
 
   // this signal is emitted if the server has requested Tx enabled
-  Q_SIGNAL void setup_tx (int newTxMsgIdx, QString const& msg, bool skipGrid, bool useRR73, QString const& check);         //avt 11/28/20
+  Q_SIGNAL void setup_tx (int newTxMsgIdx, QString const& msg, bool skipGrid, bool useRR73, QString const& check, quint32 offset);         //avt 11/12/21
 
 private:
   class impl;
